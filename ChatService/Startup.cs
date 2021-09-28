@@ -20,17 +20,24 @@ namespace ChatService
             services.AddSignalR();
             services.AddCors(options =>
             {
-                options.AddDefaultPolicy(builder =>
+                options.AddPolicy("MyPolicy", builder =>
                 {
-                    builder.WithOrigins("http://localhost:3000").AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+                    builder.SetIsOriginAllowed(_ => true)
+                           .AllowAnyMethod()
+                           .AllowAnyHeader().AllowCredentials();
                 });
-            });
+        });
             services.AddSingleton<IDictionary<string, UserConnection>>(opts => new Dictionary<string, UserConnection>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.Use(async (context, next) =>
+            {
+                System.Diagnostics.Debug.WriteLine(context.Request.Headers["origin"]);
+                await next.Invoke();
+            });
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -38,11 +45,15 @@ namespace ChatService
 
             app.UseRouting();
 
-            app.UseCors();
+            app.UseCors("MyPolicy");
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapHub<ChatHub>("/chat");
+                endpoints.MapGet("/", async context =>
+                {
+                    await context.Response.WriteAsync("Worker Process Name: ");
+                });
             });
         }
     }

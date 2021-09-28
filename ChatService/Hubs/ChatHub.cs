@@ -35,8 +35,23 @@ namespace ChatService.Hubs
                 await Clients.Group(userConnection.Room).SendAsync("ReceivedMessage", userConnection.User, message);
             }
         }
+
+        public async Task SendWebRTC(String user, NodeDssMessage message)
+        {
+            
+
+            if (_connections.TryGetValue(Context.ConnectionId, out UserConnection userConnection))
+            {
+                System.Diagnostics.Debug.WriteLine("HEJ");
+                System.Diagnostics.Debug.WriteLine(userConnection.User);
+                System.Diagnostics.Debug.WriteLine(message.MessageType);
+                await Clients.Group(userConnection.Room).SendAsync("WebRTC", user, message);
+            }
+        }
+
         public async Task JoinRoom(UserConnection userConnection)
         {
+            System.Diagnostics.Debug.WriteLine(userConnection.ToString());
             await Groups.AddToGroupAsync(Context.ConnectionId, userConnection.Room);
             _connections[Context.ConnectionId] = userConnection;
             await Clients.Group(userConnection.Room).SendAsync("ReceivedMessage", _botUser, $"{userConnection.User} has joined");
